@@ -1,3 +1,17 @@
+Can we abstract classification problems into a common generic format that can then be converted to a variety of syntactic alternatives? Maybe something like:
+
+{'task':'classification', 
+	'domain': 'animal',
+	'categories':['domesticated', 'wild'],
+	'examples'[
+		'chicken': 'domesticated',
+		'Mandarin duck': 'wild',
+		'Egyptian goose': 'wild'
+	]
+}
+
+Here are some examples of different ways classification problems are presented in the Dolly dataset:
+
 Identify which instrument is string or woodwind: Panduri, Zurna
 
 Tell me which of these things are fruits or vegetables: Carrot, Apple, Orange, Potato, Peas, Broccoli, Pears
@@ -101,15 +115,6 @@ At a restaurant that serves only vegan food, tell me whether each of the followi
 
 
 
-{'task':'classification', 
-	'domain': 'animal',
-	'categories':['domesticated', 'wild'],
-	'examples'[
-		'chicken': 'domesticated',
-		'Mandarin duck': 'wild',
-		'Egyptian goose': 'wild'
-	]
-}
 
 
 ===
