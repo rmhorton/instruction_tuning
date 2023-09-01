@@ -1,0 +1,154 @@
+Identify which instrument is string or woodwind: Panduri, Zurna
+
+Tell me which of these things are fruits or vegetables: Carrot, Apple, Orange, Potato, Peas, Broccoli, Pears
+
+Which of the following are names typically given to girls, typically given to boys, or names that could easily be given to either a boy or a girl: Sam, Bill, Liz, Tracy, Mary, Joe, Taylor, Missy, Ralph, Scott, Michelle, Michael, Frank, Cheryl, Ryan, Stephenie.
+
+Which of the following are women scientists: Marie Curie, Elizabeth Blackwell, Jane Goodall, Rosalind Franklin, Ada Lovelace, Maria Mitchell, Archimedes, Albert Einstein, Ernest Rutherford, Alfred Nobel, Alexander Fleming, Michael Faraday, Niels Bohr, Stephen Hawking, Alan Turing.
+
+Tell me whether these are hockey teams or soccer teams: Anaheim Ducks, Calgary Flames, Brighton & Hove Albion, Edmonton Oilers, Arsenal, Aston Villa, Brentford, Los Angeles Kings, San Jose Sharks, Seattle Kraken, Crystal Palace, Everton, Vancouver Canucks, Vegas Golden Knights, Chelsea.
+
+Classify each of the following exercises as cardio or weights: bench press, running, cycling, squat, jump roping, curl
+
+Which is a species of fish? Hoki or Loki
+
+Identify which animal species is alive or extinct: Black-footed Ferret, Dodo
+
+Tell me whether these are mammals or amphibians: Kangaroo, Hellbender, Horse, Taita African Caecilian, Monkey, Pangolins, Squirrel, Frogs
+
+Which of the following are considered functional programming languages and which are not: OCaml, Scala, Python, C, and Java.
+
+Which characters belong to DC or Marvel Universe? Hulk, Spectre
+
+Tell me which of these are brands of soap: Dove, Colgate, Palmolive, Ivory, Pearl Milling Co, Sofsoap, Dawn, Ethan
+
+Identify which animal is domesticated or wild: Chicken, Mandarin duck, Egyptian goose
+
+Tell me which of the following have been known to attack humans: mouse, goldfish,  bears, mugs, cactus, moss, nudibranches, corals, hippos, wolves.
+
+Categorize each of the following as reptiles, vegetables or body parts: elbow, iguana, toe, lettuce, broccoli, turtle, shin, eye, okra, alligator, ear, finger, python, anaconda, and cabbage.
+When cleaning a house, categorize each of the following as "useful" or "not useful": Broom, Mop, Vacuum, Sand, Dirt, Dust Pan, Food
+
+Tell me whether each of these are green or yellow: lemon, lime, cheese, spinach, lettuce, spaghetti
+
+Identify the bird from the list: Queensbury, Kingfisher, Bishopsgate
+
+Choose the word which is different from the rest: Emu, Ostrich, Kiwi, Eagle
+
+Which word is different from the rest: cap, turban, veil, hat
+
+Which is a bird or fish: Red-throated diver, Redlip blenny
+
+Identify which car manufacturer is German or American: Bitter, Cord
+
+KClassify the cities based on whether they are located in Slovakia or Croatia.ošice, Bratislava, Zagreb, Split, Petržalka, Rijeka
+
+
+Tell me if these are toppings for pizza: pepperoni, cheese, sausage, peppers, onions, bacon, mushrooms, pineapple
+
+
+Tell me if these are brands or companies: Kleenex, Procter & Gamble, Cadillac, Doritos, Chase?
+
+Which of these cities in the United States of America are the capital of their state: Albany, Albuquerque, Anchorage,  Ann Arbor, Annapolis?
+
+Classify each of these as extinct, not extinct, or neither: Mythosaur, Triceratops, Dumbo Octopus, Dodo, Tiger, Lion turtle, Megalodon, Dire wolf, Pegasus, Seahorse
+
+Tell me whether the following animals are part of the cat family: ocelot, lion, jackal, caracal, leopard, fox, tiger, lynx.
+Tell me whether the following are foods or beverages: coffee, water, corn, tea, rice, beef.
+
+Classify the following as either Australian flora or fauna: kangaroo, wattle, emu, possum, echidna, kookaburra, macadamia, eucalyptus.
+
+Which of the following items does not look the same as the others? Banana, orange, plum, pomegranate, watermelon.
+
+Which of the following items would I need on a surf trip? Surfboard, leash, tent, knife, wetsuit, batteries, granola bars, bag of grapes, lead weights, a dump truck, the complete collection of Beach Boys albums on vinyl.
+
+Which of the following items is the odd one out? Pacific, Atlantic, Baltic and Indian
+
+Which is an imperial or a metric measurement: pint, millilitres
+
+Which of the following countries are in Europe and which are in the rest of the world: Nicaragua, Australia, Austria, New Zealand, Morocco, Spain, Greece, China, Chile?
+
+Tell me which one of the following countries are in the European Union: The Netherlands, Switzerland, Germany, Finland, the United Kingdom, Italy, Luxembourg, Turkey, Australia, Vietnam, Canada.
+
+Please classify each of the following animals as mammal, amphibian, or fish: elk, frog, dog, cat, newt, and human.
+
+Classify each of the following animals as exoskeleton or endoskeleton: grasshopper, fish, spider, scorpion, ant, monkey
+
+Tell me whether these animals are domesticated or not domesticated: cats, sheep, bald eagle, whale, dog, bat
+
+Tell me whether these cities are in Minnesota, Arizona or neither.
+
+Tell me whether these cities are in Spain or France: Pamplona, Valencia, Nice, Marseille, Paris, Sevilla
+
+Tell me whether these are names of basketball teams or baseball teams: Los Angeles Lakers, Los Angeles Angels, Los Angeles Dodgers, Los Angeles Clippers, San Diego Padres, New York Yankees, Miami Heat, Boston Celtics
+
+
+Which of the following animals is a marsupial: kangaroo, zebra, or elephant?
+
+Tell me whether these are fiction or non fiction books: "To Kill a Mocking Bird", "The Lord of the Rings", "A Brief History of Time".
+
+Which of the following is useful for transportation: a glass of wine, a lamp, a train, an iced cube tray, a plane, a bicycle, an apple and a scooter.
+
+Which of the following numbers is a irrational number: -200, -1.5, -1, 0, 1, 1.5, 200, pi, e, sqrt(-1)?
+
+Which of these items are clothing brands and which are banks: Levi’s, Gap, Goldman Sachs,  Banana Republic, JP Morgan Chase, Seven, and Guess.
+
+Would you typically find each of the following items in a bathroom, bedroom, kitchen or living room? Couch, pillow, dish soap, bedside table, oven, shower, toilet, coffee table, coffee machine
+
+Determine whether each of the following items is worn on somebody's head or feet: helmet, shoes, sandals, hat, socks, beanie, cleats
+
+At a restaurant that serves only vegan food, tell me whether each of the following items could be found in the kitchen or not: Butter, Eggs, Tofu, Chicken, Kale, Spinach, Peppers, Steak, Bread, Chickpeas, Pork
+
+
+
+{'task':'classification', 
+	'domain': 'animal',
+	'categories':['domesticated', 'wild'],
+	'examples'[
+		'chicken': 'domesticated',
+		'Mandarin duck': 'wild',
+		'Egyptian goose': 'wild'
+	]
+}
+
+
+===
+
+Classification with context
+
+You've bought a condominium in the city, your first home, with more rooms than your previous apartments. It doesn't have a garage or any yard. Which of the following items would be handy? A lawnmower, a bus pass, a security system, more bathroom towels, wall art, gardening tools, a washer and dryer set, a car
+
+you are riding your bicycle to the store and your bicycle has a basket. which of the following items can you take back home? a toothbrush, a TV, a bar of soap, a pair of pants, a pair of skis, a loaf of bread, a tiger, a phone charger
+
+If you are about to be admitted to the hospital overnight, categorize each of the following as either useful or not useful: a phone charger, a camping tent, reading glasses, a cruise ship, 10 bags of lumpy cement, a favorite blanket, and headphones, and a grand piano.
+
+On a gravel bike ride, categorize which of these items are 'useful', 'not useful', 'dangerous', or ,'neither': shovel, spare tire, clock, horn, water bottle, gps, knife, snake
+
+
+
+===
+
+Not classification:
+
+What are the different types of cancers?
+What are the different types of art?
+Whats are the 5 best places to visit in late spring months like May?
+
+===
+
+Classify the movies based on the protagonist hero who acted in them.
+Chak De! India , Kuch Kuch Hota Hai, Om Shanti Om, Dangal, Sultan, Dabangg
+
+Classify the movies based on their genre.
+The Pink Panther, Die Hard, No time to Die, Annabelle
+
+Classify the movies based on whether they belong to Fantasy or Mystery genre.
+AVATAR, SHAZAM, MISSING, FREDDY
+
+Tell me which one does not fit with the group:  Dog, Horse, Goat, Cat, Fox
+
+===
+
+Many of the responses are incomplete, e.g.:
+
+
