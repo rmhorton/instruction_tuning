@@ -1,5 +1,8 @@
 # run_parse
 # JMA 31 Aug 2023
+# Prompt for a sentence, then return the lemma, tag, POS, and dep labels for the root and all stop words.  
+# Just hit return to quit. 
+
 import re, os, sys, pprint
 import spacy as sp   
 
