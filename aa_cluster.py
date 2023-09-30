@@ -108,73 +108,111 @@ def get_cluster_dendrogram(vector_list, metric = 'cosine'):
     return dendro
 
 
-def get_roc_for_clustering(cluster_list, flag_list):
+def get_performance_for_clustering(cluster_list, flag_list):
     """
-    Describe how well clusters predict binary labels (flags) by using frequency of positive labels in 
-    clusters as a score to predict the label, and computing AUC.
+    Describe how well clusters predict binary labels (flags) using frequency of positive labels in clusters 
+        * compute an ROC curve (and AUC) using cluster label frequency as a score to predict the label
+        * compute mean entropy and purity across clusters
 
-    df:
-    cluster_col:
-    flag_col: 
+    cluster_list: list of cluster IDs to which cases are assigned
+    flag_list: binary label for cases
     """
     from sklearn import metrics
+    from math import log
+    import sys
+
+    # stat functions
+    h = lambda p: 0.0 if min(p, 1-p) < sys.float_info.epsilon else -p * log(p) - (1-p) * log(1-p)
+    purity = lambda p: max(p, 1 - p)
+
     df = pd.DataFrame.from_dict({'cluster' : cluster_list, 'flag': flag_list})
-    cluster_frequency = df.groupby('cluster').mean()
-    scores = [ cluster_frequency['flag'][cluster_name] for cluster_name in df['cluster'] ]
-    fpr, tpr, thresholds = metrics.roc_curve(df['flag'], scores)
+    cluster_stats = df.groupby('cluster').mean().rename(columns={'flag':'p'})
+    cluster_stats['entropy'] = [ h(p) for p in cluster_stats['p'] ]
+    cluster_stats['purity'] = [ purity(p) for p in cluster_stats['p'] ]
+    scores = [ cluster_stats['p'][cluster_name] for cluster_name in df['cluster'] ]
+    fpr, tpr, thresholds = metrics.roc_curve(flag_list, scores)
     auc = metrics.auc(fpr, tpr)
-    return { 'roc': {'fpr': fpr, 'tpr': tpr, 'threshold': thresholds}, 'auc': auc, 'num_clusters':len(set(cluster_list)) }
+    return { 
+        'num_clusters':len(set(cluster_list)), 
+        'mean_entropy': np.mean(cluster_stats['entropy']), 'mean_purity': np.mean(cluster_stats['purity']),
+        'roc': {'fpr': fpr, 'tpr': tpr, 'threshold': thresholds}, 'auc': auc
+    }
 
 
-def get_cluster_rocs(flags_df, clusters_df):
+def get_cluster_performance_df(clusters_df, flags_df, flag_category_map=None):
     """
-    Compute ROC curves based on cluster assignments.
+    Compute a dataframe of cluster performance statistics.
     flags_df: dataframe where each column contains binary labels and rows correspond with cluster_assignments.
     clusters_df: dataframe where each column contains cluster assignments.
-    returns: A dict of dicts where the keys are flag, then cluster, and the values are dicts as returned by 'get_roc_for_clustering'.
-        An ROC dict has two keys, 'roc' (where the values are lists for tpr, fpr, and thresholds), and 'auc'.
+    returns: A dataframe containing cluster performance stats as returned by 'get_roc_for_clustering'.
     """
     import pandas as pd
     
-    flag_cluster_roc = {}
+    cluster_performance_rows = []
     
     for flag_col in flags_df.columns:
         flags = flags_df[flag_col]
         for cluster_col in clusters_df.columns:
             clusters = clusters_df[cluster_col]
-            if flag_col not in flag_cluster_roc:
-                flag_cluster_roc[flag_col] = {}
-            flag_cluster_roc[flag_col][cluster_col] = get_roc_for_clustering(clusters, flags)
+            perf = get_performance_for_clustering(clusters, flags)
+            perf['flag'] = flag_col
+            perf['cluster_col'] = cluster_col
+            cluster_performance_rows.append(perf)
 
-    return flag_cluster_roc
-
-
-def extract_cluster_roc_df(my_flag_cluster_roc):
-    # To do: combine this function with `get_cluster_rocs` so we dont have to get them then extract them. Just put them in a dataframe to start with
-    return pd.DataFrame([
-        {
-            'flag': flag_col,
-            'num_clusters': my_flag_cluster_roc[flag_col][cluster_col]['num_clusters'],
-            'auc': my_flag_cluster_roc[flag_col][cluster_col]['auc'],
-            'roc': my_flag_cluster_roc[flag_col][cluster_col]['roc'],
-        }
-        for flag_col in my_flag_cluster_roc
-            for cluster_col in my_flag_cluster_roc[flag_col]
-    ])
+    cpdf = pd.DataFrame(cluster_performance_rows)
+    if flag_category_map is not None:
+        cpdf['flag_category'] = [flag_category_map[f] for f in cpdf['flag']]
+    
+    return cpdf
 
 
-def plot_cluster_aucs(my_cluster_aucs):
+def plot_cluster_performance(my_cluster_performance, metric='auc', title='', file=''):
     """
-    Plot cluster AUC vs. cluster size, from the data returned by 'extract_cluster_aucs'
+    Plot cluster performance metric vs. cluster size, from the data returned by 'extract_cluster_aucs'
 
+    my_cluster_performance: a pandas dataframe as returned by 'get_cluster_performance_df'. 
+        If this dataframe has a 'flag_category' column, it will determine the line style.
+    metric: one of 'auc' (default), 'mean_purity', 'mean_entropy'
+    title: the title for the plot.
+    file: Name of file where plot should be saved (leave as an empty string for no plot)
     usage:
-        cluster_rocs = get_cluster_rocs(pattern_flags, cluster_assignment_df)
-        cluster_aucs =  extract_cluster_aucs(cluster_rocs)
-        plot_cluster_aucs(cluster_aucs)
+        my_cluster_performance = get_cluster_performance_df(cluster_assignment_df, pattern_flags)
+        plot_cluster_performance(my_cluster_performance, metric='auc', title='My awesome results')
 
     """
-    sns.lineplot(x='num_clusters', y='auc', data=my_cluster_aucs, hue='flag')
+    # Plot 'num_cluster' values as ordinal categories.
+    # Because we will be messing with data types, make sure we are only operating on a copy of the dataframe.
+    cpdf = my_cluster_performance.copy()
+
+    from pandas.api.types import is_numeric_dtype
+    if not is_numeric_dtype(cpdf['num_clusters']):
+        raise Exception("num_clusters must be numeric")
+    
+    # sort levels as numbers before converting to strings
+    num_cluster_levels = [str(x) for x in sorted(set(cpdf['num_clusters']))]
+    
+    num_cluster_str = [str(x) for x in cpdf['num_clusters']]
+    
+    cpdf['num_clusters'] = pd.Series(
+        pd.Categorical(
+            num_cluster_str, categories=num_cluster_levels, ordered=True
+        )
+    )
+
+    if 'flag_category' in cpdf.columns:
+        ax = sns.lineplot(x='num_clusters', y=metric, data=cpdf, hue='flag', style='flag_category')
+    else:
+        ax = sns.lineplot(x='num_clusters', y=metric, data=cpdf, hue='flag')
+    
     plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left', borderaxespad=0)
+    plt.title(title)
+    if metric == 'auc':
+        plt.ylim(0.5, 1.05)
+        
+    if file != '':
+        plt.savefig(file)
+        
+    plt.show()
 
 
 def get_cluster_assignments(my_dendrogram, num_slices=8):
@@ -215,10 +253,10 @@ def plot_aspect_roc_curves(aspect, cluster_roc_df):
     #    individual cluster with its own line segment.
     #    The current implementation gives each unique score its own line segment, 
     #    so it is prone to combine all the clusters with frequencies of exactly 1 or exactly 0.
-    # 2. Support multiple distinguishable plotting style specifications, so we can
-    #    compare the curves for differently weighted embeddings on the same plot.
-    # 3. Include a color spectrum for each plotting style, e.g, shades of red for one weighting, 
-    #    and shades of blue for the other; `colorsys.hls_to_rgb` is our friend.
+    # 2a. Support multiple distinguishable plotting style specifications, so we can
+    #     compare the curves for differently weighted embeddings on the same plot.
+    # 2b. Include a color spectrum for each plotting style, e.g, shades of red for one weighting, 
+    #     and shades of blue for the other; `colorsys.hls_to_rgb` is our friend.
 
     import matplotlib.pyplot as plt
 
@@ -236,5 +274,6 @@ def plot_aspect_roc_curves(aspect, cluster_roc_df):
         plt.plot( row['roc']['fpr'], row['roc']['tpr'], **plotspec1)
         aucs.append(row['auc'])
     plt.title(aspect)
+    plt.show()
     print(num_rocs, [f"{auc:0.3f}" for auc in aucs])
     
