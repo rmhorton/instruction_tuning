@@ -108,9 +108,78 @@ def get_cluster_dendrogram(vector_list, metric = 'cosine'):
     return dendro
 
 
+def get_reference_roc(flag_list, scores):
+    """
+    Compute ROC the old fashioned way to double cleck our custom 'get_cluster_roc' function. 
+    This should give the same results as long as there are no clusters with tied scores.
+    """
+    # To Do: This function is only needed for testing; remove it once the custom method is thoroughly tested.
+    from sklearn import metrics
+    fpr, tpr, thresholds = metrics.roc_curve(flag_list, scores)
+    return pd.DataFrame.from_dict({'fpr': fpr, 'tpr': tpr, 'threshold': thresholds})
+
+    
+def get_cluster_stats(cluster_list, flag_list):
+    """
+    Compute frequency (p), entropy, and purity for each cluster.
+
+    cluster_list: a list of cluster assignments (e.g., one column from the dataframe returned by 'get_cluster_assignments').
+    flag_list: a list or Series of binary labels (e.g., one column from the dataframe returned by 'find_pattern_flags_in_text').
+        These two lists must be or the same length and have corresponding elements.
+
+    returns: a dataframe with one row per cluster and the following columns:
+        'p': the fraction of positive items in the cluster
+        'n': total number of items
+        'pos': the number of positive items
+        'neg': the number of negative items
+        'entropy'
+        'purity'
+    """
+    from math import log
+    import sys
+    
+    # stat functions
+    h = lambda p: 0.0 if min(p, 1-p) < sys.float_info.epsilon else -p * log(p) - (1-p) * log(1-p)
+    purity = lambda p: max(p, 1 - p)
+    
+    df = pd.DataFrame.from_dict({'cluster' : cluster_list, 'flag': flag_list})
+    
+    cluster_stats = df.groupby('cluster') \
+           .agg(p=('flag', 'mean'), n=('flag', 'size'), pos=('flag', 'sum') )
+    cluster_stats['neg'] = cluster_stats['n'] - cluster_stats['pos']
+    cluster_stats['entropy'] = [ h(p) for p in cluster_stats['p'] ]
+    cluster_stats['purity'] = [ purity(p) for p in cluster_stats['p'] ]
+    
+    return cluster_stats
+
+
+def get_cluster_roc(cluster_list, flag_list):
+    """
+    Compute ROC for clustering from scratch so that we will be one point per cluster, rather than one point per unique score.
+    This will be particularly useful when there are a lot of singleton clusters with frequencies of exactly 1 or exactly 0.
+
+    cluster_list: list with categorical cluster assignments.
+    flag_list: list with binary labels. Positions in these two lists refer to the same items.
+    returns: a dataframe with tpr and fpr (as well as some other bookkeeping columns).
+    """
+    
+    df = get_cluster_stats(cluster_list, flag_list)
+
+    zero_row = pd.DataFrame({'n': 0, 'p': float("inf"), 'pos': 0,'neg': 0}, index =[0])
+    df = pd.concat([zero_row, df]).reset_index(drop = True)
+
+    df = df.sort_values('p', ascending=False).reset_index(drop=True)
+    df['pos_cumsum'] = np.cumsum(df['pos'])
+    df['tpr'] = np.cumsum(df['pos'])/np.sum(df['pos'])
+    df['fpr'] = np.cumsum(df['neg'])/np.sum(df['neg'])
+    
+    return df[ ['fpr', 'tpr', 'p'] ].rename(columns={'p': 'threshold'})
+
+
 def get_performance_for_clustering(cluster_list, flag_list):
     """
-    Describe how well clusters predict binary labels (flags) using frequency of positive labels in clusters 
+    For the given cluster/flag pair, describe how well clusters predict binary labels (flags) using 
+    frequency of positive labels in clusters 
         * compute an ROC curve (and AUC) using cluster label frequency as a score to predict the label
         * compute mean entropy and purity across clusters
 
@@ -118,30 +187,37 @@ def get_performance_for_clustering(cluster_list, flag_list):
     flag_list: binary label for cases
     """
     from sklearn import metrics
-    from math import log
-    import sys
+    # from math import log
+    # import sys
 
-    # stat functions
-    h = lambda p: 0.0 if min(p, 1-p) < sys.float_info.epsilon else -p * log(p) - (1-p) * log(1-p)
-    purity = lambda p: max(p, 1 - p)
+    # # stat functions
+    # h = lambda p: 0.0 if min(p, 1-p) < sys.float_info.epsilon else -p * log(p) - (1-p) * log(1-p)
+    # purity = lambda p: max(p, 1 - p)
 
-    df = pd.DataFrame.from_dict({'cluster' : cluster_list, 'flag': flag_list})
-    cluster_stats = df.groupby('cluster').mean().rename(columns={'flag':'p'})
-    cluster_stats['entropy'] = [ h(p) for p in cluster_stats['p'] ]
-    cluster_stats['purity'] = [ purity(p) for p in cluster_stats['p'] ]
-    scores = [ cluster_stats['p'][cluster_name] for cluster_name in df['cluster'] ]
-    fpr, tpr, thresholds = metrics.roc_curve(flag_list, scores)
-    auc = metrics.auc(fpr, tpr)
+    # df = pd.DataFrame.from_dict({'cluster' : cluster_list, 'flag': flag_list})
+    # cluster_stats = df.groupby('cluster').mean().rename(columns={'flag':'p'})
+    # cluster_stats['entropy'] = [ h(p) for p in cluster_stats['p'] ]
+    # cluster_stats['purity'] = [ purity(p) for p in cluster_stats['p'] ]
+
+    cluster_stats = get_cluster_stats(cluster_list, flag_list)
+    
+    scores = [ cluster_stats['p'][cluster_name] for cluster_name in cluster_list ]
+    ref_roc_df = get_reference_roc(flag_list, scores)
+    ref_auc = metrics.auc(ref_roc_df['fpr'], ref_roc_df['tpr']) # this will be true if there are no ties: np.allclose(ref_roc_df, roc_df)
+    roc_df = get_cluster_roc(cluster_list, flag_list) # some redundant calculation here...
+    auc = metrics.auc(roc_df['fpr'], roc_df['tpr'])
+    if ( abs(ref_auc - auc) > 1e-6 ):  # about the same, instead of ref_auc != auc
+        print(f"AUC difference! auc={auc}, ref_auc={ref_auc}")
     return { 
         'num_clusters':len(set(cluster_list)), 
         'mean_entropy': np.mean(cluster_stats['entropy']), 'mean_purity': np.mean(cluster_stats['purity']),
-        'roc': {'fpr': fpr, 'tpr': tpr, 'threshold': thresholds}, 'auc': auc
+        'roc': roc_df, 'auc': auc, 'ref_auc': ref_auc
     }
 
 
 def get_cluster_performance_df(clusters_df, flags_df, flag_category_map=None):
     """
-    Compute a dataframe of cluster performance statistics.
+    Compute a dataframe of cluster performance statistics (calls 'get_performance_for_clustering' for each cluster/flag pair).
     flags_df: dataframe where each column contains binary labels and rows correspond with cluster_assignments.
     clusters_df: dataframe where each column contains cluster assignments.
     returns: A dataframe containing cluster performance stats as returned by 'get_roc_for_clustering'.
@@ -182,7 +258,7 @@ def plot_cluster_performance(my_cluster_performance, metric='auc', title='', fil
     """
     # Plot 'num_cluster' values as ordinal categories.
     # Because we will be messing with data types, make sure we are only operating on a copy of the dataframe.
-    cpdf = my_cluster_performance.copy()
+    cpdf = my_cluster_performance.copy().reset_index(drop=True)
 
     from pandas.api.types import is_numeric_dtype
     if not is_numeric_dtype(cpdf['num_clusters']):
@@ -247,7 +323,12 @@ def hue_spectrum(num_colors=8, hue=1/3, saturation=0.5):
     return reversed(hex_list)
 
 
-def plot_aspect_roc_curves(aspect, cluster_roc_df):
+def plot_aspect_roc_curves(aspect, cluster_performance_df): # wascluster_roc_df):
+    """
+    Plot the set of ROC curves (over different numbers of clusters) for a given aspect.
+    aspect: the name of the binary label
+    cluster_performance_df: dataframe returned by 'get_cluster_performance'
+    """
     # To Do
     # 1. Re-do ROC calculation from scratch so we can account for each 
     #    individual cluster with its own line segment.
@@ -260,7 +341,7 @@ def plot_aspect_roc_curves(aspect, cluster_roc_df):
 
     import matplotlib.pyplot as plt
 
-    aspect_roc_df = cluster_roc_df[ cluster_roc_df['flag'] == aspect ]
+    aspect_roc_df = cluster_performance_df[ cluster_performance_df['flag'] == aspect ]
 
     plotspec = {'linewidth': 2, 'markersize': 8}
     plotspec1 = { #'color':'green', 
@@ -276,4 +357,18 @@ def plot_aspect_roc_curves(aspect, cluster_roc_df):
     plt.title(aspect)
     plt.show()
     print(num_rocs, [f"{auc:0.3f}" for auc in aucs])
+
+
+def crosstab_clustermap(df, cluster_col_1, cluster_col_2):
+    """
+    Plot a clustermap of the cross-tabulation between two different ways of clustering the same items.
     
+    df: a dataframe containning cluster assignment columns
+    cluster_col_1, cluster_col_2: Names of two cluster columns in the dataframe.
+    """
+    import pandas as pd
+    import seaborn as sns
+    Xtab = pd.crosstab(df[cluster_col_1], df[cluster_col_2])
+    sns.clustermap(Xtab)
+
+
