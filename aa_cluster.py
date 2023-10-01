@@ -171,6 +171,16 @@ def get_cluster_improvement_H(cluster_stats_df):
     improvement = mean_entropy - get_avg_clusters_H(cluster_stats_df)
     return improvement
 
+def get_cluster_entropy_improvement(cstats):
+	"""
+	Return entropy delta for one set of clusters as a postive number; the decrease in entropy compared to no clustering. 
+	Larger is better (e.g. the avg entropy for clusters is less than the unclustered entropy.)
+	cstats: a cluster stats dataframe as returned by 'get_cluster_stats'
+	"""
+	overall_entropy = h( sum(cstats.pos) / sum(cstats.n) )
+	mean_cluster_weighted_entropy = np.mean( (cstats.n * cstats.entropy)/sum(cstats.n) )
+	return overall_entropy - mean_cluster_weighted_entropy
+
 
 def get_cluster_roc(cluster_list, flag_list):
     """
@@ -208,7 +218,8 @@ def get_performance_for_clustering(cluster_list, flag_list):
     from sklearn import metrics
 
     cluster_stats = get_cluster_stats(cluster_list, flag_list)
-    cluster_improvement_H = get_cluster_improvement_H(cluster_stats)
+    # cluster_improvement_H = get_cluster_improvement_H(cluster_stats)
+    cluster_improvement_H = get_cluster_entropy_improvement(cluster_stats)
     
     scores = [ cluster_stats['p'][cluster_name] for cluster_name in cluster_list ]
     ref_roc_df = get_reference_roc(flag_list, scores)
@@ -244,7 +255,6 @@ def get_cluster_performance_df(clusters_df, flags_df, flag_category_map=None):
             perf['flag'] = flag_col
             perf['cluster_col'] = cluster_col
             cluster_performance_rows.append(perf)
-            print('perf', flags, cluster, perf)
 
     cpdf = pd.DataFrame(cluster_performance_rows)
     if flag_category_map is not None:
@@ -254,12 +264,13 @@ def get_cluster_performance_df(clusters_df, flags_df, flag_category_map=None):
 
 def plot_auc_vs_delta_entropy(my_cluster_performance, category='framework', file=''):
     cpdf = my_cluster_performance.copy().reset_index(drop=True)
+    cpdf['log_delta_entropy']  = np.log(cpdf.delta_entropy)
     
     if 'flag_category' in cpdf.columns:
         cpdf = cpdf.loc[cpdf.flag_category == category]
-        ax = sns.lineplot(x='auc', y='delta_entropy', data=cpdf, hue='flag', style='flag_category')
+        ax = sns.lineplot(x='auc', y='log_delta_entropy', data=cpdf, hue='flag', style='flag_category')
     else:
-        ax = sns.lineplot(x='auc', y='delta_entropy', data=cpdf, hue='flag')
+        ax = sns.lineplot(x='auc', y='log_delta_entropy', data=cpdf, hue='flag')
     plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left', borderaxespad=0)
     if file != '':
         plt.savefig(file)
