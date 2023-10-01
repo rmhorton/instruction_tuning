@@ -1,4 +1,8 @@
+# cluster evaluation 
+#  JMA sept 2023
 #
+# used to compute entropy in cluster evaluation notebook
+# Note: entropy functions used in aa_cluster_demo have been moved to aa_cluster.py
 
 """Here we evaluate how well a particular clustering captures aspects 
 of the text by using "aspect patterns" in the form of regular expressions 

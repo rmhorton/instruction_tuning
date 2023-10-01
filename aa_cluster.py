@@ -1,5 +1,6 @@
 ### Aspect aware clustering functions ###
 
+import sys
 import pandas as pd
 import numpy as np
 import seaborn as sns
@@ -118,7 +119,11 @@ def get_reference_roc(flag_list, scores):
     fpr, tpr, thresholds = metrics.roc_curve(flag_list, scores)
     return pd.DataFrame.from_dict({'fpr': fpr, 'tpr': tpr, 'threshold': thresholds})
 
-    
+def h(p):
+    'Binary entropy using natural log'
+    from math import log
+    return 0.0 if min(p, 1-p) < sys.float_info.epsilon else -p * log(p) - (1-p) * log(1-p)
+
 def get_cluster_stats(cluster_list, flag_list):
     """
     Compute frequency (p), entropy, and purity for each cluster.
@@ -135,11 +140,6 @@ def get_cluster_stats(cluster_list, flag_list):
         'entropy'
         'purity'
     """
-    from math import log
-    import sys
-    
-    # stat functions
-    h = lambda p: 0.0 if min(p, 1-p) < sys.float_info.epsilon else -p * log(p) - (1-p) * log(1-p)
     purity = lambda p: max(p, 1 - p)
     
     df = pd.DataFrame.from_dict({'cluster' : cluster_list, 'flag': flag_list})
@@ -151,6 +151,25 @@ def get_cluster_stats(cluster_list, flag_list):
     cluster_stats['purity'] = [ purity(p) for p in cluster_stats['p'] ]
     
     return cluster_stats
+
+def get_avg_clusters_H(df):
+    cluster_h_sum = []
+    total_sum = []
+    for cluster in df.itertuples():
+        trues = cluster.pos
+        totals = cluster.n
+        total_sum.append(totals)
+        cluster_h_sum.append(totals * h(trues / totals))
+    s = sum(cluster_h_sum)/(len(cluster_h_sum) * sum(total_sum))
+    return s
+
+def get_cluster_improvement_H(cluster_stats_df):
+    """Return entropy delta for one set of clusters as a postive number; the decrease in entropy compared to no clustering. l
+       Larger is better (e.g. the cluster's avg entropy is less than the unclustered entropy.)"""
+    mean_h = cluster_stats_df[['pos', 'n']].sum()
+    mean_entropy = h(mean_h.pos / mean_h.n) # - avg_clusters_H(pattern, df)
+    improvement = mean_entropy - get_avg_clusters_H(cluster_stats_df)
+    return improvement
 
 
 def get_cluster_roc(cluster_list, flag_list):
@@ -187,19 +206,9 @@ def get_performance_for_clustering(cluster_list, flag_list):
     flag_list: binary label for cases
     """
     from sklearn import metrics
-    # from math import log
-    # import sys
-
-    # # stat functions
-    # h = lambda p: 0.0 if min(p, 1-p) < sys.float_info.epsilon else -p * log(p) - (1-p) * log(1-p)
-    # purity = lambda p: max(p, 1 - p)
-
-    # df = pd.DataFrame.from_dict({'cluster' : cluster_list, 'flag': flag_list})
-    # cluster_stats = df.groupby('cluster').mean().rename(columns={'flag':'p'})
-    # cluster_stats['entropy'] = [ h(p) for p in cluster_stats['p'] ]
-    # cluster_stats['purity'] = [ purity(p) for p in cluster_stats['p'] ]
 
     cluster_stats = get_cluster_stats(cluster_list, flag_list)
+    cluster_improvement_H = get_cluster_improvement_H(cluster_stats)
     
     scores = [ cluster_stats['p'][cluster_name] for cluster_name in cluster_list ]
     ref_roc_df = get_reference_roc(flag_list, scores)
@@ -211,6 +220,7 @@ def get_performance_for_clustering(cluster_list, flag_list):
     return { 
         'num_clusters':len(set(cluster_list)), 
         'mean_entropy': np.mean(cluster_stats['entropy']), 'mean_purity': np.mean(cluster_stats['purity']),
+        'delta_entropy': cluster_improvement_H,
         'roc': roc_df, 'auc': auc, 'ref_auc': ref_auc
     }
 
@@ -234,6 +244,7 @@ def get_cluster_performance_df(clusters_df, flags_df, flag_category_map=None):
             perf['flag'] = flag_col
             perf['cluster_col'] = cluster_col
             cluster_performance_rows.append(perf)
+            print('perf', flags, cluster, perf)
 
     cpdf = pd.DataFrame(cluster_performance_rows)
     if flag_category_map is not None:
@@ -241,6 +252,19 @@ def get_cluster_performance_df(clusters_df, flags_df, flag_category_map=None):
     
     return cpdf
 
+def plot_auc_vs_delta_entropy(my_cluster_performance, category='framework', file=''):
+    cpdf = my_cluster_performance.copy().reset_index(drop=True)
+    
+    if 'flag_category' in cpdf.columns:
+        cpdf = cpdf.loc[cpdf.flag_category == category]
+        ax = sns.lineplot(x='auc', y='delta_entropy', data=cpdf, hue='flag', style='flag_category')
+    else:
+        ax = sns.lineplot(x='auc', y='delta_entropy', data=cpdf, hue='flag')
+    plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left', borderaxespad=0)
+    if file != '':
+        plt.savefig(file)
+        
+    plt.show()
 
 def plot_cluster_performance(my_cluster_performance, metric='auc', title='', file=''):
     """
