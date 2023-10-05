@@ -1,0 +1,96 @@
+%%% methods.tex %%%
+Cases in the Dolly dataset consist of a category field that roughly describes the kind of query, and text fields for instruction, response, and, for certain categories, context. Here we describe a variety of approaches for discovering and engineering additional interpretable features of each case.
+Code used in this paper is available in our repository on GitHub \footnote{\url{https://github.com/rmhorton/instruction_tuning}}
+
+\subsection{Semantic embedding}
+
+Semantic embeddings were generated for each instruction, response, and context passage using the \texttt{all-MiniLM-L6-v2} SentenceTransformer model (\cite{reimers-2019-sentence-bert}). This model generates relatively small embedding vectors (384 dimensions) which are convenient for logistical and performance reasons while we develop techniques, but the approaches we discuss here should all work with longer vectors as well.
+
+\subsection{Latent semantic analysis focused on long n-grams}
+
+\textbf{\emph{N-gram vectors}} were computed as follows, using scikit learn functions from \texttt{feature\_extraction.text}:
+Term counts were computed using ngram lengths between 5 and 12, retaining only terms with a count above a threshold of 25. These counts were used to compute term frequency - inverse document frequency (TF/IDF) vectors, which were then reduced to 100 dimensions using PCA. 
+Similarly, \textbf{\emph{POS n-gram vectors}} were computed by repeating this process after first replacing the words in the text with their corresponding parts of speech using spaCy (\cite{honnibal2020spacy})~\footnote{\url{https://spacy.io/}}, so "Do aliens exist?" becomes "aux noun verb punct".
+
+\subsection{Clustering}
+
+For a given embedding, we compute a matrix of pairwise distances  using \texttt{scipy.spatial.distance.pdist} with the 'cosine' metric, and use that to construct a dendrogram using \texttt{scipy.cluster.hierarchy.ward}. This dendrogram was successively sliced using a series of log 2 spaced distance thresholds. The resulting cluster partitions are named using a capital letter 'A' to denote the clusters using the largest distance threshold (giving a small number of large clusters), and sequential capital letters of the alphabet to indicate successively smaller thresholds. The hierarchical nature of the dendrogram is retained in these sliced partitions such that every 'B' level cluster is entirely contained within an 'A' level cluster, and each 'A' level cluster is partitioned completely into a set of 'B' level clusters, and so forth. To put similar items close together on a list, we simply sort them by 'A' cluster, then 'B', cluster, then 'C' cluster, etc. Examples of clustered and sorted instructions are shown in Figures~\ref{fig:instruction_examples_U2} and \ref{fig:instruction_examples_iwi}.
+
+\subsection{Text patterns}
+
+For each case we create a collection of binary labels using regular expressions that identify word patterns for particular aspects, such as the subject domain the question is about, or the form of the question revealed by its syntax. These labels are 'soft' in the sense that they are fairly crude approximations of the underlying aspects of interest. Examples are shown in Figure~\ref{fig:regex_examples}.
+%For instance the domain ``animals'' is identified with the expression {\tt r"\b(animal|cat|dog|pet)"}. Questions that ask to assign a item to a class have the form {\tt r'identify|classify|which'}. 
+% ??? Bob: aspect vs. noisy measurement of an aspect: platonic aspects?
+% Soft labels form a noisy multi-label interpretation of the data: One instruction may be identified with one or more, or with none at all. 
+
+% Bob: I moved Snorkel to the Discussion
+
+\subsection{Co-occurrence between cases, clusters, and labels}
+
+Co-occurrence between two attributes is a tabulation of how often the possible values of one attribute are found together in the same record with each possible value of the other attribute. The simplest way to compute this in Python is by cross tabulation, which generates a matrix we can plot as a clustermap. This implementation is so concise that we provide the essential code used to generate Figure~\ref{fig:clusters_xtab_category} here:
+
+\begin{verbatim}
+import pandas as pd
+# Cross-tabulate clusters and labels
+xtab = pd.crosstab(dd['category'], dd[cluster_col])
+# Divide the cols by their sums, so each column shows 
+# the distribution of categories with a cluster.
+xtab_norm = xtab.div(xtab.sum(axis=0), axis=1)
+# Plot clustermap
+import seaborn as sns
+sns.clustermap(xtab_norm, figsize=(20, 4), dendrogram_ratio=(.05, .2), cbar_pos=None)
+\end{verbatim}
+
+While cross-tabulations are simple to compute and display, they do not scale well to large numbers of categories, and the matrix visualization cannot relate more than two kinds of things at a time. To study more complex and more fine-grained relationships we turn to graphs.
+
+To quantify co-occurrence frequency, we borrow the term \emph{confidence} from market basket analysis; this is the frequency with which instructions that have a given feature also have a second feature. Features in this case can be any categorical attribute of the instruction/response pair, such as the category labels already present in the dataset, cluster IDs we have assigned through various clustering approaches, flags from our regex patterns, etc. Note that confidence is a directional metric; the probability that an instruction in the classification category will also belong to a particular cluster is not the same as the probability that an instruction in the cluster will also be in the classification category. These directional edges are indicated by arrows in the visualization (see Figure~\ref{fig:cooccurrance_2_panels}).
+
+%!!! This figure was moved to the results section
+% \begin{figure}
+%   \centering
+%   \includegraphics[width=0.90\linewidth]{figures/cooccurrance_2_panels.png}
+%   \caption{
+%    \textbf{Co-occurrence graph between category labels, instruction clusters, and response clusters.} \emph{Left Panel:} Wide-angle view. Nodes representing category labels are in red, with those associated with context passages (\texttt{closed\_qa}, \texttt{summarization}, and \texttt{information\_extraction}) using star shapes and the other categories using rectangles. Instruction clusters are shown in light blue, and response clusters are in yellow.
+%   \emph{Right panel:} A zoomed-in view of the co-occurrence graph showing clusters related to \texttt{classification}, showing clear subcategories characterized by both instruction and response clusters.
+%   }
+%   \label{fig:cooccurrance_2_panels}
+% \end{figure}
+
+%%% Note; language implementation details are uninteresting
+%   to the NeurIPS audience - to save space you can leave
+%   this out. 
+We have implemented the computation of these statistics in SQL so that it will be portable to common database systems (including Spark). For local implementation in Python, the function simply wraps the underlying SQL query in a call to a sqlite in-memory database.
+
+Computation and visualization of the graphs is done with our ThoughtGraph library~\footnote{https://github.com/rmhorton/ThoughtGraph}, which formats the data for use with the visjs network visualization library \footnote{https://github.com/visjs/vis-network} and adds a slider to interactively set a filtering threshold for edge weights, so that weaker edges can be removed to reveal the stronger connections.
+
+% \subsection{Measuring predictability}
+
+% \subsubsection{Cluster prediction}
+
+\subsection{Analysis of label distribution across clusters}
+
+% JMA 
+To characterize the clusters we use the soft-labelings provided by the text patterns. Clusterings that capture a soft-label well will concentrate instances of that aspect in a few clusters compared to clusters that are more randomly distributed.
+
+% \subsubsection{Entropy and other measures}
+
+The quality of the clusters is measured by their purity. Purity is a function of the fraction $f$ of labelled cases in the cluster, defined as $p(f) = \min(p, 1-p)$. As the fraction of labels reaches an extreme the purity increases. Entropy, $h(p) = - 2f(p)\log(f(p))$, is a differentiable function of $p$ that properly emphasizes differences at extremes over the mid-range. We use entropy to quantify the 
+degree of concentration of the aspect pattern across the clusters by comparing the cluster size-weighted entropy of the clustering with the entropy over all cases considered as a single group.  Any clustering will decrease entropy. The decrease in entropy of the distribution of a binary label (a positive number; more is better) is a supervised measure of the quality of the clustering. 
+% \subsubsection{Receiver Operating Characteristic}
+
+We have derived a novel evaluation method for visualizing cluster quality, based on classical Receiver Operating Characteristic (ROC) curves that extends our entropy measure. For each cluster the fraction of positive and negative items out of all positives and negatives for that labelling are computed.  Then TPR (positives) and FPR (negatives) are computed for each cluster as a running sum of these fractions, and plotted to form the characteristic concave ROC curve for the clusters. Furthermore the AUC for this curve is a monotonic, concave function of the clustering entropy. More importantly, the location of a cluster along the curve indicates that cluster's effect on the AUC, in addition to its ranking by purity.  Note that the clustering method is unaware of the labels; we are not clustering on the labels, only on the embedding vectors.  However the labels' distribution across different clusterings suggests the semantic meaning of the clusters. 
+
+An ROC curve typically shows how well positive and negative cases are separated by the scores of an ML model. We adapt this approach to show how well clustering separates the positive and negative cases by using the mean frequency of positive labels in each cluster as the predicted score for each case in the cluster. Typically an ROC curve has one diagonal segment for each unique score in the test set; we modify the plotting slightly so that each cluster receives its own segment, even when multiple clusters have the same score, and add marks on the plot to show the individual segments. This makes it easy to see the difference between a large cluster and multiple small clusters with the same score.
+
+% An aspect that most clearly distinguishes among clusters produces an ROC curve with a higher AUC. 
+
+% Alex
+\subsection{Estimating text complexity}
+
+Alongside the composite features introduced by the clusterings, we can consider other features derived directly from the text. Text complexity can be assessed from various angles, including readability and reading comprehension. Our focus here leans towards reading comprehension, which gauges the difficulty of an entity (e.g., humans or LLMs) to comprehend, reason, and answer questions based on text passages.
+
+% We curated a dataset combining the RACE dataset and the RACE-C dataset (\cite{lai2017race}, \cite{pmlr-v101-liang19a}). This combined dataset is categorized into three distinct reading comprehension levels.
+
+To compute text complexity metrics, we used the py-readability-metrics package, selecting the Gunning Fog index (\cite{wiki:gunning_fog}). This index was found to have the highest correlation with reading comprehension levels in our curated RACE dataset (\cite{lai2017race}, \cite{pmlr-v101-liang19a}). We then computed Gunning Fog readability scores for the Dolly dataset, specifically emphasizing the \texttt{ closed\_qa} instruction category.
+
+% TODO - Alex need a sentence about how this is relevant to the larger questions of clustering and explainability.

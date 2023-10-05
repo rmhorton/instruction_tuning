@@ -1,0 +1,27 @@
+
+% We need to place our paper in the context of the workshop, as described on their home page https://an-instructive-workshop.github.io/
+% These topics seem most relevant:
+% Evaluation and Oversight: effective and reliable oversight over existing models; enforcing guardrails and guarantees for model behaviors; interpretability and analysis
+% Limitations, Risks and Safety: bias and fairness; factuality and hallucination; safety concerns arising from instruction-following models
+
+
+We have demonstrated in an instruction tuning dataset a variety of approaches for discovering and engineering interpretable features that can support error analysis of models trained or tested with this data.
+
+% Sentence embeddings have proven to be profoundly informative feature sets for training machine learning models on text, but raw embeddings are typically far from interpretable. Clustering based on embeddings followed by analysis of the clusters can provide a path to discovering more understandable features of the text passages.
+
+% Creativity and the ability to generate free-form narrative text are not always necessary or desired capabilities in a language model. At this point in history it is easy to imagine using LLMs to label data for training classical ML models, which can run faster, cheaper, and with more restricted resources.
+
+% Even with high performance commercial general-purpose large language models easily available through web services, individuals or organizations may need to fine-tune their own models for data security reasons, or for domain-specific applications.
+
+% Note that the ability to divide instruction-tuning data into fine-grained subcategories means we don’t need to have a single approach to evaluating or augmenting data; we can craft a panel of more specialized approaches.
+
+% Grammar-based constrained decoding (\cite{geng2023flexible}) appears to be a promising approach for producing output that is at least syntactically correct, and this may alleviate some of the burden of specifying the output format in the instructions. However, specification of higher level aspects of the desired output format still requires instruction.
+
+% Clustering by semantic vector is a simple way to find near-repeats, which in itself is useful for curating datasets (there are many identical and nearly identical repeats in the Dolly dataset).
+
+% Predictions made on soft labels can have better performance than the soft labels themselves, partly because they let you adjust score thresholds to get more desirable sensitivity/specificity tradeoffs. ML predictions are also very useful for curating labels, because cases with high predictive scores that did not originally receive the label, or cases that were labelled but are given a low score by the model are the ones that most need double-checking.
+
+Once you teach an LLM to follow instructions, you can instruct it to generate more instruction-tuning data (\cite{wang2023selfinstruct}) which can in turn be used to improve the model, analogous to a RepRap (\cite{jones_reprap_2011}) for language models. Careful measurement of performance across a wide range of granular instruction categories will certainly be important for monitoring, and most likely for guiding this kind of process.
+
+The label-based ROC analysis described in this paper is not limited to use with clusterings; it could be applied to any process that results in a partition of examples (such as multiclass classification). True positive and false positive rates can be calculated describing the distribution of labels within each partition, and each partition will be represented by a segment of the resulting ROC curve.
+

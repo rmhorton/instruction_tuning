@@ -1,0 +1,17 @@
+% These are mostly bits about reweighting.
+
+
+Our premise is that the lower levels of the LLM are less sensitive to tuning, and that improvements in tuning can be attempted by modifying the output layer(s). In addition, by starting with the lower layers' text embedding vectors, we can apply a combination of supervised and unsupervised techniques to focus the model on desired outputs, making instruction tuning possible without incrementally retraining the entire model. 
+
+
+\section{Use the coefficients from the predictive models to re-weight the dimensions of an embedding.}
+* positive: emphasize the predictive dimensions\\
+* negative: deemphasie the predictive dimensions.\\
+
+\section{Cluster based on the re-weighted embeddings.}
+
+* Positively re-weighting is like fine tuning; it makes unsupervised results more like supervised results.\\
+
+What we've tried to show is that, in contrast to upweighting, downweighting irrelevant syntactic aspects reveals increased separation of content-based aspects as shown by measures such as AUC and entropy.  
+
+%* Can we show that downweighting particular aspects can give us useful clusters focusing on other aspects?\\

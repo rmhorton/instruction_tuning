@@ -1,0 +1,46 @@
+% Introduction
+
+The ability to follow instructions is fundamental to the current success of conversational large language models (LLMs) such as {\em chatGPT}. Foundational LLMs were trained on enormous unlabeled corpora, where they gained the ability to generate text effectively indistinguishable from human generated text. Fine tuning for instruction following enables these models to respond precisely to queries and commands to generate plausible and (hopefully) appropriate responses. 
+% Instruction-tuning training data is supervised, consisting of diverse instructions, each accompanied by the desired result. Instruction tuning requires far less data and GPU resources than did the original LLM training, and holds great promise both for enhancing the general abilities of LLM, and as a way to train them for specific tasks. 
+Methods as well as datasets are being rapidly developed for these purposes.
+
+%  examples, like error terrain analysis?
+% Instruction following models raise specific explainability challenges, given that many existing toolsets~(\cite{nushi2018accountable}) are [intended for conventional ML models.] Characterization of training and test data, that is, providing or discovering d
+Descriptive features of data are widely used to find weakness in model performance, and to monitor the extent to which remediation efforts can address these weaknesses (\cite{nushi2018accountable}). "Error Analysis" is an important and widely used approach in which an interpretable model is used to explain the errors made by a powerful deep learning model (\cite{singla2021understanding}). Interpretable models require interpretable features; our focus here is on developing such features, and in that context this work describes a range of both classical and novel techniques for engineering features that should be useful for explaining LLM instruction performance. 
+
+% Bob: It takes work to characterize clusters, but clustering provides a helpful starting point.
+
+% But notoriously such clusters beg for interpretation and for having labels ascribed to them. 
+% Programatically generating ``soft labels'' removes the burden of tedious manual labeling. These then become a source for emphasizing aspects of instructions, such as examining their domain content [as opposed to the syntax conveying type of the instruction question.] 
+% Such meaningful labels are necessary for Error Analysis~(\cite{singla2021understanding}) where interpretable models are used to predict a deep learning model's mistakes, guiding model developers in remediating specific weaknesses. 
+% When large numbers of uninterpretable features (as from an embedding) is valuable for generating latent features that simplify the feature space. While assigning cases to clusters does not automatically provide any sort of explanation, examining a group of cases to 
+
+
+Our contribution in this paper is to demonstrate various approaches to engineering or discovering interpretable features of instruction tuning examples. These approaches range from straightforward predictions made directly from the text (e.g., complexity score), to more complicated features derived using weak supervision of clustering over different kinds of embeddings. Specifically we show how an analog of conventional ROC analysis together with weak supervision gives insights not attainable from unsupervised clustering metrics alone.
+
+\subsection{The Dolly Dataset}
+While several well known instruction-tuning datasets are now openly available, we have chosen to study the Dolly dataset~(\cite{DatabricksBlog2023DollyV2}) because it is relatively small, simply structured, and specifically developed to be open source so that it can be freely used for any academic or commercial purpose. However the general approaches used should be applicable to any such dataset.
+% Move discussion of dimensions (framework, domain, and desired output format) to results, since we found them by looking through clusters.
+% [instructions can be characterised in two major dimensions -- syntax and content. FOr any application - e.g ITuning we need to come up with intrpretable features that explain the model. ]
+The dataset developers have labeled each instruction as belonging to one of seven categories. The first three categories include a context passage (e.g., the text to summarize), while the remaining categories do not have separate context passages, either because all the information is included in the instruction, or because they focus on general knowledge:
+
+\begin{itemize}
+
+\item {\em summarization}: instructions related to expressing the main point of the provided context passage in more concise form.
+
+\item {\em information\_extraction}: specification of particular items of data to find in the context passage.
+
+\item {\em closed\_qa }: questions to be answered based on the information contained in a context passage of reference text.
+
+\item {\em classification }: For this task, annotators were asked to make judgments about class membership (e.g. are the items in a list animals, minerals or vegetables) or to judge the properties of a short passage of text, such as the sentiment of a movie review.
+
+\item {\em brainstorming }: open-ended idea generation
+
+\item {\em creative\_writing }: This task would include things like writing a poem or a love letter.
+
+\item {\em open\_qa } (or {\em general\_qa }): questions to be answered from general knowledge, without a specific passage of context. The use of two different labels for this category seems to be an error in the dataset.
+\end{itemize}
+
+Note that the existing category labels are extremely broad; our primary tasks here are to try to identify more granular subcategories of instructions, and to begin to characterize a set of aspects by which instructions may be considered similar or different from one another. 
+
+The present work largely focuses on analysis of the instruction and response fields, though similar characterization could be done for the context field as well.

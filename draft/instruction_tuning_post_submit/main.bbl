@@ -1,0 +1,60 @@
+\begin{thebibliography}{10}
+\providecommand{\natexlab}[1]{#1}
+\providecommand{\url}[1]{\texttt{#1}}
+\expandafter\ifx\csname urlstyle\endcsname\relax
+  \providecommand{\doi}[1]{doi: #1}\else
+  \providecommand{\doi}{doi: \begingroup \urlstyle{rm}\Url}\fi
+
+\bibitem[Conover et~al.(2023)Conover, Hayes, Mathur, Xie, Wan, Shah, Ghodsi, Wendell, Zaharia, and Xin]{DatabricksBlog2023DollyV2}
+Mike Conover, Matt Hayes, Ankit Mathur, Jianwei Xie, Jun Wan, Sam Shah, Ali Ghodsi, Patrick Wendell, Matei Zaharia, and Reynold Xin.
+\newblock Free dolly: Introducing the world's first truly open instruction-tuned llm, 2023.
+\newblock URL \url{https://www.databricks.com/blog/2023/04/12/dolly-first-open-commercially-viable-instruction-tuned-llm}.
+
+\bibitem[Honnibal et~al.(2020)Honnibal, Montani, Van~Landeghem, and Boyd]{honnibal2020spacy}
+Matthew Honnibal, Ines Montani, Sofie Van~Landeghem, and Adriane Boyd.
+\newblock {spaCy: Industrial-strength Natural Language Processing in Python}.
+\newblock 2020.
+\newblock \doi{10.5281/zenodo.1212303}.
+
+\bibitem[Jones et~al.(2011)Jones, Haufe, Sells, Iravani, Olliver, Palmer, and Bowyer]{jones_reprap_2011}
+Rhys Jones, Patrick Haufe, Edward Sells, Pejman Iravani, Vik Olliver, Chris Palmer, and Adrian Bowyer.
+\newblock Reprap – the replicating rapid prototyper.
+\newblock \emph{Robotica}, 29\penalty0 (1):\penalty0 177–191, 2011.
+\newblock \doi{10.1017/S026357471000069X}.
+
+\bibitem[Lai et~al.(2017)Lai, Xie, Liu, Yang, and Hovy]{lai2017race}
+Guokun Lai, Qizhe Xie, Hanxiao Liu, Yiming Yang, and Eduard Hovy.
+\newblock Race: Large-scale reading comprehension dataset from examinations, 2017.
+\newblock URL \url{https://arxiv.org/abs/1704.04683}.
+
+\bibitem[Liang et~al.(2019)Liang, Li, and Yin]{pmlr-v101-liang19a}
+Yichan Liang, Jianheng Li, and Jian Yin.
+\newblock A new multi-choice reading comprehension dataset for curriculum learning.
+\newblock In Wee~Sun Lee and Taiji Suzuki, editors, \emph{Proceedings of The Eleventh Asian Conference on Machine Learning}, volume 101 of \emph{Proceedings of Machine Learning Research}, pages 742--757. PMLR, 17--19 Nov 2019.
+\newblock URL \url{https://proceedings.mlr.press/v101/liang19a.html}.
+
+\bibitem[Nushi et~al.(2018)Nushi, Kamar, and Horvitz]{nushi2018accountable}
+Besmira Nushi, Ece Kamar, and Eric Horvitz.
+\newblock Towards accountable ai: Hybrid human-machine analyses for characterizing system failure, 2018.
+
+\bibitem[Reimers and Gurevych(2019)]{reimers-2019-sentence-bert}
+Nils Reimers and Iryna Gurevych.
+\newblock Sentence-bert: Sentence embeddings using siamese bert-networks.
+\newblock In \emph{Proceedings of the 2019 Conference on Empirical Methods in Natural Language Processing}. Association for Computational Linguistics, 11 2019.
+\newblock URL \url{https://arxiv.org/abs/1908.10084}.
+
+\bibitem[Singla et~al.(2021)Singla, Nushi, Shah, Kamar, and Horvitz]{singla2021understanding}
+Sahil Singla, Besmira Nushi, Shital Shah, Ece Kamar, and Eric Horvitz.
+\newblock Understanding failures of deep networks via robust feature extraction, 2021.
+
+\bibitem[Wang et~al.(2023)Wang, Kordi, Mishra, Liu, Smith, Khashabi, and Hajishirzi]{wang2023selfinstruct}
+Yizhong Wang, Yeganeh Kordi, Swaroop Mishra, Alisa Liu, Noah~A. Smith, Daniel Khashabi, and Hannaneh Hajishirzi.
+\newblock Self-instruct: Aligning language models with self-generated instructions, 2023.
+
+\bibitem[{Wikipedia authors}(2023)]{wiki:gunning_fog}
+{Wikipedia authors}.
+\newblock Gunning fog index --- {W}ikipedia{,} the free encyclopedia, 2023.
+\newblock URL \url{https://en.wikipedia.org/wiki/Gunning_fog_index}.
+\newblock [Online; accessed 4-October-2023].
+
+\end{thebibliography}
